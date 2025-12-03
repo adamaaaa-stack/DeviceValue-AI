@@ -14,6 +14,45 @@ export interface MarketData {
   confidence: number
 }
 
+export interface RawMarketData {
+  ebayHtml?: string
+  swappaHtml?: string
+  facebookHtml?: string
+}
+
+// Get raw HTML from marketplaces for Gemini analysis
+export async function getRawMarketData(brand: string, model: string): Promise<RawMarketData | null> {
+  if (!SCRAPER_API_KEY) {
+    console.warn('ScraperAPI key not configured - market data unavailable')
+    return null
+  }
+
+  try {
+    const deviceName = `${brand} ${model}`.toLowerCase()
+
+    // Search multiple marketplaces for raw HTML
+    const [ebayResult, swappaResult] = await Promise.allSettled([
+      getEbayHtml(deviceName),
+      getSwappaHtml(deviceName)
+    ])
+
+    const rawData: RawMarketData = {}
+
+    if (ebayResult.status === 'fulfilled' && ebayResult.value) {
+      rawData.ebayHtml = ebayResult.value
+    }
+    if (swappaResult.status === 'fulfilled' && swappaResult.value) {
+      rawData.swappaHtml = swappaResult.value
+    }
+
+    return Object.keys(rawData).length > 0 ? rawData : null
+  } catch (error) {
+    console.error('Raw market data fetch failed:', error)
+    return null
+  }
+}
+
+// Legacy function - kept for backward compatibility but now uses Gemini analysis
 export async function searchMarketPrices(brand: string, model: string): Promise<MarketData | null> {
   // Check if ScraperAPI key is configured
   if (!SCRAPER_API_KEY) {
@@ -70,13 +109,31 @@ export async function searchMarketPrices(brand: string, model: string): Promise<
   }
 }
 
-async function searchEbay(deviceName: string): Promise<{ prices: number[] } | null> {
+// Get raw HTML from eBay
+async function getEbayHtml(deviceName: string): Promise<string | null> {
   try {
     const searchQuery = encodeURIComponent(`${deviceName} unlocked used`)
     const url = `https://www.ebay.com/sch/i.html?_nkw=${searchQuery}&LH_ItemCondition=3000&_sacat=0&rt=nc&LH_Sold=1&LH_PrefLoc=1`
 
     const response = await fetch(`https://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=true`)
+
+    if (!response.ok) {
+      throw new Error(`ScraperAPI eBay request failed: ${response.status}`)
+    }
+
     const html = await response.text()
+    console.log(`Fetched eBay HTML for ${deviceName}, length: ${html.length}`)
+    return html
+  } catch (error) {
+    console.error('eBay HTML fetch error:', error)
+    return null
+  }
+}
+
+async function searchEbay(deviceName: string): Promise<{ prices: number[] } | null> {
+  try {
+    const html = await getEbayHtml(deviceName)
+    if (!html) return null
 
     const prices: number[] = []
 
@@ -116,13 +173,31 @@ async function searchEbay(deviceName: string): Promise<{ prices: number[] } | nu
   }
 }
 
-async function searchSwappa(deviceName: string): Promise<{ prices: number[] } | null> {
+// Get raw HTML from Swappa
+async function getSwappaHtml(deviceName: string): Promise<string | null> {
   try {
     const searchQuery = encodeURIComponent(deviceName)
     const url = `https://swappa.com/buy/${searchQuery}`
 
     const response = await fetch(`https://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=true`)
+
+    if (!response.ok) {
+      throw new Error(`ScraperAPI Swappa request failed: ${response.status}`)
+    }
+
     const html = await response.text()
+    console.log(`Fetched Swappa HTML for ${deviceName}, length: ${html.length}`)
+    return html
+  } catch (error) {
+    console.error('Swappa HTML fetch error:', error)
+    return null
+  }
+}
+
+async function searchSwappa(deviceName: string): Promise<{ prices: number[] } | null> {
+  try {
+    const html = await getSwappaHtml(deviceName)
+    if (!html) return null
 
     const prices: number[] = []
 

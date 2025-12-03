@@ -1,5 +1,5 @@
 // Real market prices researched from actual marketplace data (2024)
-import { searchMarketPrices } from './marketSearch'
+import { searchMarketPrices, getRawMarketData } from './marketSearch'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 // Use Gemini 1.5 Pro for better analysis and search capabilities
@@ -26,6 +26,57 @@ export interface DeviceSpecs {
   ram?: string
   accessories?: string
   photoBase64?: string
+}
+
+// Simple Gemini call without search tools
+async function callGemini(prompt: string, imageBase64?: string): Promise<string> {
+  if (!GEMINI_API_KEY) {
+    throw new Error('Gemini API key not configured')
+  }
+
+  const requestBody: Record<string, unknown> = {
+    contents: [{
+      parts: imageBase64
+        ? [
+            { text: prompt },
+            { inline_data: { mime_type: 'image/jpeg', data: imageBase64 } }
+          ]
+        : [{ text: prompt }]
+    }],
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 2048,
+    }
+  }
+
+  const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('Gemini API error:', response.status, errorText)
+    throw new Error(`API error: ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  let textContent = ''
+  const parts = data.candidates?.[0]?.content?.parts || []
+  for (const part of parts) {
+    if (part.text) {
+      textContent += part.text
+    }
+  }
+
+  if (!textContent) {
+    console.error('Empty Gemini response:', JSON.stringify(data))
+    throw new Error('Empty response from AI')
+  }
+
+  return textContent
 }
 
 async function callGeminiWithSearch(prompt: string, imageBase64?: string): Promise<string> {
@@ -109,29 +160,33 @@ function extractJSON(text: string): Record<string, unknown> {
 export async function analyzeDevice(specs: DeviceSpecs): Promise<DeviceAnalysis> {
   const deviceName = `${specs.brand} ${specs.model}${specs.storage ? ` ${specs.storage}` : ''}`
 
-  const prompt = `ANALYZE THIS DEVICE PHOTO and determine its current used resale value by searching the internet for real comparable sales.
+  // Fetch raw HTML data from marketplaces
+  const marketData = await getRawMarketData(specs.brand, specs.model)
 
-${specs.photoBase64 ? '📸 PHOTO PROVIDED: Examine the device carefully for condition, damage, wear, scratches, screen condition, etc.' : '❌ NO PHOTO: Search for typical good used condition prices'}
+  const htmlData = marketData ? `
+RAW MARKETPLACE HTML DATA FOR ANALYSIS:
 
-SEARCH THE INTERNET RIGHT NOW for current used resale prices of "${deviceName}".
+${marketData.ebayHtml ? `=== EBAY HTML ===\n${marketData.ebayHtml.slice(0, 10000)}\n` : ''}
+${marketData.swappaHtml ? `=== SWAPPA HTML ===\n${marketData.swappaHtml.slice(0, 10000)}\n` : ''}
 
-Search these marketplaces and get REAL current prices:
-- eBay.com sold listings
-- Swappa.com listings  
-- Facebook Marketplace
-- Mercari.com recent sales
-- OfferUp.com
-- BackMarket.com
-- Gazelle.com
+ANALYZE THIS HTML DATA to find actual sold prices and current listings.
+` : 'No marketplace data available - use general market knowledge.'
 
+  const prompt = `ANALYZE THIS DEVICE and determine its current used resale value.
 
-Find ACTUAL SOLD PRICES from the last 30 days that match the condition you see in the photo.
+${specs.photoBase64 ? '📸 PHOTO PROVIDED: Examine the device carefully for condition, damage, wear, scratches, screen condition, etc.' : '❌ NO PHOTO: Use typical good used condition'}
 
-Return ONLY this JSON format with REAL market data:
+DEVICE: "${deviceName}"
+
+${htmlData}
+
+Based on the photo analysis and marketplace HTML data above, determine the resale value.
+
+Return ONLY this JSON format:
 {
-  "valueMin": <lowest actual sold price you found for similar condition>,
-  "valueMax": <highest actual sold price you found for similar condition>,
-  "confidence": <1-100 based on how many real comparable sales you found>,
+  "valueMin": <lowest realistic price based on data>,
+  "valueMax": <highest realistic price based on data>,
+  "confidence": <1-100 based on data quality>,
   "damageAnalysis": {
     "detected": <true if damage visible in photo, false otherwise>,
     "severity": "<none|minor|moderate|severe>",
@@ -139,10 +194,10 @@ Return ONLY this JSON format with REAL market data:
     "description": "<detailed condition description based on photo analysis>"
   },
   "suggestedListing": "<honest listing description mentioning condition>",
-  "marketInsights": "<explain based on real sales data you found>"
+  "marketInsights": "<analysis based on marketplace data provided>"
 }`
 
-  const text = await callGeminiWithSearch(prompt, specs.photoBase64)
+  const text = await callGemini(prompt, specs.photoBase64)
 
   try {
     const parsed = extractJSON(text)
@@ -184,28 +239,37 @@ export async function getMarketComparison(brand: string, model: string): Promise
   priceRange: { min: number; max: number }
   demandLevel: 'low' | 'medium' | 'high'
 }> {
-  const prompt = `Find recent sold prices for used "${brand} ${model}" from:
+  // Fetch raw HTML data from marketplaces
+  const marketData = await getRawMarketData(brand, model)
 
-eBay sold listings
-Swappa recent sales
-Facebook Marketplace
-Mercari sold items
+  const htmlData = marketData ? `
+RAW MARKETPLACE HTML DATA FOR ANALYSIS:
 
-Return ONLY this JSON with REAL data you found:
+${marketData.ebayHtml ? `=== EBAY HTML ===\n${marketData.ebayHtml.slice(0, 8000)}\n` : ''}
+${marketData.swappaHtml ? `=== SWAPPA HTML ===\n${marketData.swappaHtml.slice(0, 8000)}\n` : ''}
+
+ANALYZE THIS HTML DATA to find actual sold prices and current listings.
+` : 'No marketplace data available - use general market knowledge.'
+
+  const prompt = `Analyze the marketplace HTML data for "${brand} ${model}" and extract pricing information.
+
+${htmlData}
+
+Return ONLY this JSON with data extracted from the HTML:
 {
   "recentSales": [
-    {"price": <real price>, "condition": "<Good|Excellent|Fair>", "date": "<actual date>", "platform": "<actual marketplace>"},
-    {"price": <real price>, "condition": "<Good|Excellent|Fair>", "date": "<actual date>", "platform": "<actual marketplace>"},
-    {"price": <real price>, "condition": "<Good|Excellent|Fair>", "date": "<actual date>", "platform": "<actual marketplace>"},
-    {"price": <real price>, "condition": "<Good|Excellent|Fair>", "date": "<actual date>", "platform": "<actual marketplace>"},
-    {"price": <real price>, "condition": "<Good|Excellent|Fair>", "date": "<actual date>", "platform": "<actual marketplace>"}
+    {"price": <real price found in HTML>, "condition": "<condition from HTML>", "date": "<date from HTML>", "platform": "<source>"},
+    {"price": <real price found in HTML>, "condition": "<condition from HTML>", "date": "<date from HTML>", "platform": "<source>"},
+    {"price": <real price found in HTML>, "condition": "<condition from HTML>", "date": "<date from HTML>", "platform": "<source>"},
+    {"price": <real price found in HTML>, "condition": "<condition from HTML>", "date": "<date from HTML>", "platform": "<source>"},
+    {"price": <real price found in HTML>, "condition": "<condition from HTML>", "date": "<date from HTML>", "platform": "<source>"}
   ],
-  "averagePrice": <average of real prices found>,
-  "priceRange": {"min": <lowest real price>, "max": <highest real price>},
-  "demandLevel": "<low|medium|high based on sales volume>"
+  "averagePrice": <average of prices found in HTML>,
+  "priceRange": {"min": <lowest price in HTML>, "max": <highest price in HTML>},
+  "demandLevel": "<low|medium|high based on data volume in HTML>"
 }`
 
-  const text = await callGeminiWithSearch(prompt)
+  const text = await callGemini(prompt)
 
   try {
     const parsed = extractJSON(text)
