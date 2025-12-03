@@ -2,8 +2,8 @@
 import { searchMarketPrices, getRawMarketData } from './marketSearch'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-// Use Gemini 1.5 Pro for better analysis and search capabilities
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent'
+// Use Gemini 1.5 Flash - most stable and available model
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
 export interface DeviceAnalysis {
   valueMin: number
