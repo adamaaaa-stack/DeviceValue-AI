@@ -1,7 +1,7 @@
 // Real market prices researched from actual marketplace data (2024)
 import { searchMarketPrices } from './marketSearch'
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyCwV5-HftRh5bMWs1iEWgG59UAG8r7xSYk'
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 // Use Gemini 1.5 Pro for better analysis and search capabilities
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent'
 
@@ -29,6 +29,10 @@ export interface DeviceSpecs {
 }
 
 async function callGeminiWithSearch(prompt: string, imageBase64?: string): Promise<string> {
+  if (!GEMINI_API_KEY) {
+    throw new Error('Gemini API key not configured')
+  }
+
   const requestBody: Record<string, unknown> = {
     contents: [{
       parts: imageBase64

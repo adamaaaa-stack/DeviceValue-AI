@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mwikduzkufyldfrwowdh.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13aWtkdXprdWZ5bGRmcndvd2RoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2NTUzODUsImV4cCI6MjA4MDIzMTM4NX0.qBJrPOyhrFm90RiGmwf_V8QqvzfIbXdNk-ykHB3DOb0'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase credentials not configured')
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
