@@ -1,5 +1,5 @@
 // Web scraping service for real-time market data
-const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || 'demo'
+const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || '01dca77cf7720b4e097700c376284dae'
 
 export interface MarketData {
   averagePrice: number
@@ -66,27 +66,46 @@ export async function searchMarketPrices(brand: string, model: string): Promise<
 
 async function searchEbay(deviceName: string): Promise<{ prices: number[] } | null> {
   try {
-    // Use eBay's API or scraping service
-    const searchQuery = encodeURIComponent(`${deviceName} unlocked`)
-    const url = `https://www.ebay.com/sch/i.html?_nkw=${searchQuery}&LH_ItemCondition=3000&LH_PrefLoc=1&_sacat=0&rt=nc&LH_Sold=1`
+    const searchQuery = encodeURIComponent(`${deviceName} unlocked used`)
+    const url = `https://www.ebay.com/sch/i.html?_nkw=${searchQuery}&LH_ItemCondition=3000&_sacat=0&rt=nc&LH_Sold=1&LH_PrefLoc=1`
 
-    const response = await fetch(`https://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${url}`)
+    const response = await fetch(`https://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=true`)
     const html = await response.text()
 
-    // Extract prices from HTML (simplified - in production use proper HTML parsing)
-    const priceRegex = /"price":"?\$?([0-9,]+(?:\.[0-9]{2})?)"?/g
     const prices: number[] = []
-    let match
 
-    while ((match = priceRegex.exec(html)) !== null) {
+    // Look for eBay price patterns in HTML
+    const pricePatterns = [
+      /class="s-item__price[^"]*">\$([0-9,]+(?:\.[0-9]{2})?)<\/span>/g,
+      /"price":\s*"[^"]*\$([0-9,]+(?:\.[0-9]{2})?)"/g,
+      /\$([0-9,]+(?:\.[0-9]{2})?)<\/span>/g,
+      /s-item__price[^>]*>\$([0-9,]+(?:\.[0-9]{2})?)/g
+    ]
+
+    for (const pattern of pricePatterns) {
+      let match
+      while ((match = pattern.exec(html)) !== null) {
+        const price = parseFloat(match[1].replace(',', ''))
+        if (price >= 50 && price <= 5000 && !prices.includes(price)) {
+          prices.push(price)
+        }
+      }
+    }
+
+    // Also look for "Sold Price" patterns
+    const soldPricePattern = /Sold\s+for[^$]*\$([0-9,]+(?:\.[0-9]{2})?)/gi
+    let match
+    while ((match = soldPricePattern.exec(html)) !== null) {
       const price = parseFloat(match[1].replace(',', ''))
-      if (price > 100 && price < 5000) { // Reasonable price range
+      if (price >= 50 && price <= 5000 && !prices.includes(price)) {
         prices.push(price)
       }
     }
 
-    return prices.length > 0 ? { prices: prices.slice(0, 10) } : null
-  } catch {
+    console.log(`Found ${prices.length} eBay prices for ${deviceName}:`, prices.slice(0, 5))
+    return prices.length > 0 ? { prices: prices.slice(0, 15) } : null
+  } catch (error) {
+    console.error('eBay scraping error:', error)
     return null
   }
 }
@@ -96,22 +115,33 @@ async function searchSwappa(deviceName: string): Promise<{ prices: number[] } | 
     const searchQuery = encodeURIComponent(deviceName)
     const url = `https://swappa.com/buy/${searchQuery}`
 
-    const response = await fetch(`https://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${url}`)
+    const response = await fetch(`https://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=true`)
     const html = await response.text()
 
-    const priceRegex = /\$([0-9,]+(?:\.[0-9]{2})?)/g
     const prices: number[] = []
-    let match
 
-    while ((match = priceRegex.exec(html)) !== null) {
-      const price = parseFloat(match[1].replace(',', ''))
-      if (price > 100 && price < 5000) {
-        prices.push(price)
+    // Look for Swappa price patterns
+    const pricePatterns = [
+      /class="price[^"]*">\$([0-9,]+(?:\.[0-9]{2})?)<\/[^>]+>/g,
+      /\$([0-9,]+(?:\.[0-9]{2})?)\s*<[^>]*class="[^"]*price/g,
+      /data-price="([0-9,]+(?:\.[0-9]{2})?)"/g,
+      /<span[^>]*>\$([0-9,]+(?:\.[0-9]{2})?)<\/span>/g
+    ]
+
+    for (const pattern of pricePatterns) {
+      let match
+      while ((match = pattern.exec(html)) !== null) {
+        const price = parseFloat(match[1].replace(',', ''))
+        if (price >= 50 && price <= 5000 && !prices.includes(price)) {
+          prices.push(price)
+        }
       }
     }
 
-    return prices.length > 0 ? { prices: prices.slice(0, 8) } : null
-  } catch {
+    console.log(`Found ${prices.length} Swappa prices for ${deviceName}:`, prices.slice(0, 5))
+    return prices.length > 0 ? { prices: prices.slice(0, 10) } : null
+  } catch (error) {
+    console.error('Swappa scraping error:', error)
     return null
   }
 }
