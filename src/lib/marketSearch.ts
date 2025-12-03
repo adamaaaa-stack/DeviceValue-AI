@@ -1,5 +1,5 @@
 // Web scraping service for real-time market data
-const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || '01dca77cf7720b4e097700c376284dae'
+const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY
 
 export interface MarketData {
   averagePrice: number
