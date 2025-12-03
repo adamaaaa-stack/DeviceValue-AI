@@ -1,0 +1,59 @@
+[33mcommit c65db496eac17223c0bd7cce81bf6159bebebf07[m
+Author: adammorris <adammorris1213@gmail.com>
+Date:   Wed Dec 3 09:43:46 2025 +0200
+
+    Initial commit: DeviceValue AI - AI-powered device valuation platform
+    
+    Features:
+    - Gemini AI photo analysis for damage detection
+    - Real-time market price scanning from eBay, Swappa, Facebook, Mercari
+    - Condition-based pricing with actual market comparables
+    - Next.js 15 with TypeScript and Tailwind CSS
+    - Supabase authentication and database
+    - Responsive dark UI with animations
+    
+    Core functionality:
+    - Upload device photos for AI analysis
+    - Get accurate resale valuations based on real market data
+    - View market comparisons and recent sales
+    - PDF export and social sharing
+    - User dashboard with valuation history
+
+.gitignore
+README.md
+next-env.d.ts
+next.config.js
+package-lock.json
+package.json
+postcss.config.js
+src/app/api/auth/login/route.ts
+src/app/api/auth/signup/route.ts
+src/app/api/device/history/route.ts
+src/app/api/device/upload/route.ts
+src/app/api/device/valuate/route.ts
+src/app/api/leaderboard/route.ts
+src/app/api/market/comparison/route.ts
+src/app/api/share/route.ts
+src/app/dashboard/page.tsx
+src/app/globals.css
+src/app/layout.tsx
+src/app/login/page.tsx
+src/app/market/page.tsx
+src/app/page.tsx
+src/app/settings/page.tsx
+src/app/signup/page.tsx
+src/app/upload/page.tsx
+src/app/valuation/page.tsx
+src/components/MarketComparisonTable.tsx
+src/components/Navbar.tsx
+src/components/PDFExportButton.tsx
+src/components/PhotoUpload.tsx
+src/components/SocialShareButtons.tsx
+src/components/SpecsForm.tsx
+src/components/ValuationCard.tsx
+src/context/AuthContext.tsx
+src/lib/gemini.ts
+src/lib/marketSearch.ts
+src/lib/supabase.ts
+tailwind.config.ts
+tsconfig.json
