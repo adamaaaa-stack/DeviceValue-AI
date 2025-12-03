@@ -20,6 +20,21 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.build.local
+.env.vercel.local
+
+# API Keys and secrets
+*.key
+*.pem
+secrets.json
+config/secrets.*
+
+# Vercel deployment
+.vercel
+
+# Local development
+.envrc
+.direnv/
 
 # Debug logs
 npm-debug.log*
