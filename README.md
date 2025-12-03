@@ -31,21 +31,26 @@ AI-powered device valuation platform built with Next.js, Supabase, and Google Ge
 - Supabase account
 - Google AI API key
 
-### Environment Variables
+### ⚠️ REQUIRED: Environment Variables
 
-Create a `.env.local` file in the root directory:
+**Create a `.env.local` file in the root directory with your API keys:**
 
 ```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+# Supabase (REQUIRED for database & auth)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Gemini AI
+# Gemini AI (REQUIRED for device valuation)
 GEMINI_API_KEY=your_gemini_api_key
 
-# App
+# Market Data Scraping (OPTIONAL - enables eBay/Swappa scraping)
+SCRAPER_API_KEY=your_scraperapi_key
+
+# App URL
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
+
+**🚨 SECURITY WARNING:** Never commit `.env.local` to GitHub. It is automatically excluded by `.gitignore`.
 
 ### Database Setup
 
