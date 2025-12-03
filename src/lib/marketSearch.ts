@@ -15,6 +15,12 @@ export interface MarketData {
 }
 
 export async function searchMarketPrices(brand: string, model: string): Promise<MarketData | null> {
+  // Check if ScraperAPI key is configured
+  if (!SCRAPER_API_KEY) {
+    console.warn('ScraperAPI key not configured - market data unavailable')
+    return null
+  }
+
   try {
     const deviceName = `${brand} ${model}`.toLowerCase()
 
