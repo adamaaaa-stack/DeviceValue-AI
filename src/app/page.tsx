@@ -42,12 +42,12 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="page-container">
       <Navbar />
-      
+
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-4 overflow-hidden">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative pt-8 pb-20 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 xl:px-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left column - Text */}
             <motion.div
@@ -170,7 +170,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4">
+      <section className="py-16 lg:py-24 px-6 lg:px-8 xl:px-12">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -206,7 +206,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-16 lg:py-24 px-6 lg:px-8 xl:px-12">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -234,7 +234,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-slate-800">
+      <footer className="py-12 px-6 lg:px-8 xl:px-12 border-t border-slate-800">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
           <div className="flex items-center gap-2">
             <Smartphone className="w-5 h-5 text-emerald-400" />

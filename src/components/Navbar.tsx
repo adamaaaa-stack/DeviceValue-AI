@@ -14,7 +14,7 @@ export default function Navbar() {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="fixed top-0 left-0 right-0 z-50 px-4 py-3"
+      className="fixed top-0 left-0 right-0 z-50 px-6 lg:px-8 xl:px-12 py-4"
     >
       <div className="max-w-7xl mx-auto">
         <div className="glass rounded-2xl px-6 py-4 flex items-center justify-between">

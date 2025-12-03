@@ -73,7 +73,7 @@ export default function ValuationPage() {
     <div className="min-h-screen">
       <Navbar />
       
-      <div className="pt-28 pb-20 px-4">
+      <div className="pt-28 pb-20 px-6 lg:px-8 xl:px-12">
         <div className="max-w-4xl mx-auto">
           {/* Back button */}
           <Link 

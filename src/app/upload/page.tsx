@@ -95,7 +95,7 @@ export default function UploadPage() {
     <div className="min-h-screen">
       <Navbar />
       
-      <div className="pt-28 pb-20 px-4">
+      <div className="pt-28 pb-20 px-6 lg:px-8 xl:px-12">
         <div className="max-w-2xl mx-auto">
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-4 mb-8">
@@ -148,7 +148,7 @@ export default function UploadPage() {
           )}
 
           {/* Content */}
-          <div className="card p-6 md:p-8">
+          <div className="card p-6 lg:p-8 xl:p-10">
             {step === 1 ? (
               <motion.div
                 initial={{ opacity: 0 }}
